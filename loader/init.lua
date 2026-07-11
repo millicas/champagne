@@ -756,4 +756,12 @@ function Library:Keybind(props)
 
 	return setmetatable(Keybind, Library)
 end
-return Library
+local Champagne = setmetatable({}, {
+	__index = Library,
+	__call = function(_, props)
+		return Library:Window(props)
+	end,
+})
+Champagne.Window = Library.Window
+Champagne.Unload = Library.Unload
+return Champagne
