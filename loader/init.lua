@@ -26,6 +26,11 @@ local Colors = {
 	AccentHover  = rgb(147, 51, 234),
 	Circle       = rgb(255, 255, 255),
 }
+local Icons = {
+	Close = "rbxassetid://7743878857",
+	Minimize = "rbxassetid://7734000824",
+	Maximize = "rbxassetid://114251372753378",
+}
 local FONT = Enum.Font.Gotham
 local FONT_BOLD = Enum.Font.GothamBold
 local FONT_MED = Enum.Font.GothamMedium
@@ -67,6 +72,21 @@ function Library:Unload()
 	end
 	for _, conn in ipairs(Library.Connections) do
 		conn:Disconnect()
+	end
+end
+function Library:Hide()
+	if Library.ScreenGui then
+		Library.ScreenGui.Enabled = false
+	end
+end
+function Library:Show()
+	if Library.ScreenGui then
+		Library.ScreenGui.Enabled = true
+	end
+end
+function Library:ToggleVisibility()
+	if Library.ScreenGui then
+		Library.ScreenGui.Enabled = not Library.ScreenGui.Enabled
 	end
 end
 local function ApplyBackgroundFlourish(frame)
@@ -155,6 +175,7 @@ function Library:Window(props)
 		Size = props.Size or udim2(0, 680, 0, 440),
 		Tabs = {},
 		CurrentTab = nil,
+		Minimized = false,
 	}
 	Library.ScreenGui = Library:Create("ScreenGui", {
 		Name = "Champagne",
@@ -175,7 +196,7 @@ function Library:Window(props)
 	Window.Title = Library:Create("TextLabel", {
 		Parent = Window.Frame,
 		Position = udim2(0, 28, 0, 24),
-		Size = udim2(1, -56, 0, 28),
+		Size = udim2(1, -140, 0, 28),
 		BackgroundTransparency = 1,
 		Text = Window.Name,
 		Font = FONT,
@@ -186,7 +207,7 @@ function Library:Window(props)
 	Window.SubtitleLabel = Library:Create("TextLabel", {
 		Parent = Window.Frame,
 		Position = udim2(0, 28, 0, 60),
-		Size = udim2(1, -56, 0, 20),
+		Size = udim2(1, -140, 0, 20),
 		BackgroundTransparency = 1,
 		Text = Window.Subtitle,
 		Font = FONT,
@@ -213,6 +234,42 @@ function Library:Window(props)
 		TextColor3 = Colors.SubText,
 		TextXAlignment = Enum.TextXAlignment.Right,
 	})
+
+	-- Window control buttons (Close / Minimize)
+	Window.CloseButton = Library:Create("ImageButton", {
+		Parent = Window.Frame,
+		AnchorPoint = v2(1, 0),
+		Position = udim2(1, -24, 0, 28),
+		Size = udim2(0, 20, 0, 20),
+		BackgroundTransparency = 1,
+		Image = Icons.Close,
+		ImageColor3 = Colors.SubText,
+	})
+	Window.MinimizeButton = Library:Create("ImageButton", {
+		Parent = Window.Frame,
+		AnchorPoint = v2(1, 0),
+		Position = udim2(1, -58, 0, 28),
+		Size = udim2(0, 20, 0, 20),
+		BackgroundTransparency = 1,
+		Image = Icons.Minimize,
+		ImageColor3 = Colors.SubText,
+	})
+	Window.CloseButton.MouseEnter:Connect(function()
+		Library:Tween(Window.CloseButton, { ImageColor3 = Colors.Text })
+	end)
+	Window.CloseButton.MouseLeave:Connect(function()
+		Library:Tween(Window.CloseButton, { ImageColor3 = Colors.SubText })
+	end)
+	Window.CloseButton.MouseButton1Click:Connect(function()
+		Library:Unload()
+	end)
+	Window.MinimizeButton.MouseEnter:Connect(function()
+		Library:Tween(Window.MinimizeButton, { ImageColor3 = Colors.Text })
+	end)
+	Window.MinimizeButton.MouseLeave:Connect(function()
+		Library:Tween(Window.MinimizeButton, { ImageColor3 = Colors.SubText })
+	end)
+
 	Window.Sidebar = Library:Create("Frame", {
 		Parent = Window.Frame,
 		Position = udim2(0, 20, 0, 115),
@@ -242,6 +299,32 @@ function Library:Window(props)
 		BackgroundTransparency = 1,
 	})
 	Draggify(Window.Frame, Window.Frame)
+
+	Window.ExpandedSize = Window.Size
+	function Window:ToggleMinimize()
+		Window.Minimized = not Window.Minimized
+		if Window.Minimized then
+			Window.Sidebar.Visible = false
+			Window.Content.Visible = false
+			Window.Divider.Visible = false
+			Window.MinimizeButton.Image = Icons.Maximize
+			Library:Tween(Window.Frame, { Size = udim2(Window.ExpandedSize.X.Scale, Window.ExpandedSize.X.Offset, 0, 95) }, 0.2)
+		else
+			Window.MinimizeButton.Image = Icons.Minimize
+			Library:Tween(Window.Frame, { Size = Window.ExpandedSize }, 0.2)
+			task.delay(0.2, function()
+				if not Window.Minimized then
+					Window.Sidebar.Visible = true
+					Window.Content.Visible = true
+					Window.Divider.Visible = true
+				end
+			end)
+		end
+	end
+	Window.MinimizeButton.MouseButton1Click:Connect(function()
+		Window:ToggleMinimize()
+	end)
+
 	local finalSize, finalPos = Window.Size, Window.Frame.Position
 	Window.Frame.Size = udim2(finalSize.X.Scale, finalSize.X.Offset - 40, finalSize.Y.Scale, finalSize.Y.Offset - 30)
 	Window.Frame.Position = udim2(finalPos.X.Scale, finalPos.X.Offset + 20, finalPos.Y.Scale, finalPos.Y.Offset + 15)
@@ -764,4 +847,7 @@ local Champagne = setmetatable({}, {
 })
 Champagne.Window = Library.Window
 Champagne.Unload = Library.Unload
+Champagne.Hide = Library.Hide
+Champagne.Show = Library.Show
+Champagne.ToggleVisibility = Library.ToggleVisibility
 return Champagne
