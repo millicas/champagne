@@ -137,6 +137,112 @@ local function ApplyBackgroundFlourish(frame)
 	})
 	return Background
 end
+function Library:Notify(message, duration)
+	local Title = nil
+	if type(message) == "table" then
+		local props = message
+		Title = props.Title
+		duration = props.Duration or duration
+		message = props.Content or props.Message or ""
+	end
+	message = message or ""
+	duration = duration or 4
+
+	local ToastGui = Library:Create("ScreenGui", {
+		Name = "ChampagneToast",
+		Parent = PlayerGui,
+		IgnoreGuiInset = true,
+		ResetOnSpawn = false,
+		ZIndexBehavior = Enum.ZIndexBehavior.Sibling,
+		DisplayOrder = 200,
+	})
+
+	local height = Title and 66 or 54
+	local Toast = Library:Create("Frame", {
+		Parent = ToastGui,
+		Size = udim2(0, 340, 0, height),
+		Position = udim2(0.5, 0, 0, -100),
+		AnchorPoint = v2(0.5, 0),
+		BackgroundTransparency = 1,
+	})
+	local Background = ApplyBackgroundFlourish(Toast)
+	Background.BackgroundTransparency = 1
+	local Stroke = Background:FindFirstChildWhichIsA("UIStroke")
+	if Stroke then
+		Stroke.Color = Colors.Accent
+		Stroke.Transparency = 1
+	end
+
+	if Title then
+		Library:Create("TextLabel", {
+			Parent = Toast,
+			Position = udim2(0, 18, 0, 10),
+			Size = udim2(1, -32, 0, 18),
+			BackgroundTransparency = 1,
+			Text = Title,
+			Font = FONT_BOLD,
+			TextSize = 14,
+			TextColor3 = Colors.Text,
+			TextXAlignment = Enum.TextXAlignment.Left,
+			TextTransparency = 1,
+			ZIndex = 2,
+		})
+	end
+	Library:Create("TextLabel", {
+		Parent = Toast,
+		Position = udim2(0, 18, 0, Title and 30 or 0),
+		Size = udim2(1, -32, 0, Title and 24 or height),
+		BackgroundTransparency = 1,
+		Text = message,
+		Font = Title and FONT or FONT_MED,
+		TextSize = 13,
+		TextColor3 = Title and Colors.SubText or Colors.Text,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Title and Enum.TextYAlignment.Top or Enum.TextYAlignment.Center,
+		TextWrapped = true,
+		TextTransparency = 1,
+		ZIndex = 2,
+	})
+
+	local function playAll(tweens)
+		for _, t in ipairs(tweens) do t:Play() end
+	end
+
+	local slideIn = TweenService:Create(Toast, TweenInfo.new(0.5, Enum.EasingStyle.Back, Enum.EasingDirection.Out), {
+		Position = udim2(0.5, 0, 0, 20),
+	})
+	local entrance = { slideIn, TweenService:Create(Background, TweenInfo.new(0.4), { BackgroundTransparency = 0 }) }
+	if Stroke then
+		table.insert(entrance, TweenService:Create(Stroke, TweenInfo.new(0.4), { Transparency = 0.4 }))
+	end
+	for _, child in ipairs(Toast:GetChildren()) do
+		if child:IsA("TextLabel") then
+			table.insert(entrance, TweenService:Create(child, TweenInfo.new(0.4), { TextTransparency = 0 }))
+		end
+	end
+	playAll(entrance)
+
+	task.delay(duration, function()
+		local slideOut = TweenService:Create(Toast, TweenInfo.new(0.35, Enum.EasingStyle.Back, Enum.EasingDirection.In), {
+			Position = udim2(0.5, 0, 0, -100),
+		})
+		local exit = { slideOut, TweenService:Create(Background, TweenInfo.new(0.3), { BackgroundTransparency = 1 }) }
+		if Stroke then
+			table.insert(exit, TweenService:Create(Stroke, TweenInfo.new(0.3), { Transparency = 1 }))
+		end
+		for _, child in ipairs(Toast:GetChildren()) do
+			if child:IsA("TextLabel") then
+				table.insert(exit, TweenService:Create(child, TweenInfo.new(0.3), { TextTransparency = 1 }))
+			end
+		end
+		playAll(exit)
+		slideOut.Completed:Wait()
+		ToastGui:Destroy()
+	end)
+
+	return Toast
+end
+
 local function Draggify(handle, target)
 	local dragging, dragStart, startPos
 	Library:Connection(handle.InputBegan, function(input)
@@ -234,8 +340,6 @@ function Library:Window(props)
 		TextColor3 = Colors.SubText,
 		TextXAlignment = Enum.TextXAlignment.Right,
 	})
-
-	-- Window control buttons (Close / Minimize)
 	Window.CloseButton = Library:Create("ImageButton", {
 		Parent = Window.Frame,
 		AnchorPoint = v2(1, 0),
@@ -836,9 +940,6 @@ function Library:Keybind(props)
 			end
 		end)
 	end)
-
-	-- Listens for the bound key being pressed during normal play and fires the callback.
-	-- (Without this, Callback only ever fired once, at the moment you rebind the key.)
 	Library:Connection(UserInputService.InputBegan, function(input, gameProcessed)
 		if gameProcessed then return end
 		if Keybind.Binding then return end
@@ -861,4 +962,5 @@ Champagne.Unload = Library.Unload
 Champagne.Hide = Library.Hide
 Champagne.Show = Library.Show
 Champagne.ToggleVisibility = Library.ToggleVisibility
+Champagne.Notify = Library.Notify
 return Champagne
