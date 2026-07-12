@@ -837,6 +837,17 @@ function Library:Keybind(props)
 		end)
 	end)
 
+	-- Listens for the bound key being pressed during normal play and fires the callback.
+	-- (Without this, Callback only ever fired once, at the moment you rebind the key.)
+	Library:Connection(UserInputService.InputBegan, function(input, gameProcessed)
+		if gameProcessed then return end
+		if Keybind.Binding then return end
+		if Keybind.Key == Enum.KeyCode.Unknown then return end
+		if input.UserInputType == Enum.UserInputType.Keyboard and input.KeyCode == Keybind.Key then
+			Keybind.Callback(Keybind.Key)
+		end
+	end)
+
 	return setmetatable(Keybind, Library)
 end
 local Champagne = setmetatable({}, {
