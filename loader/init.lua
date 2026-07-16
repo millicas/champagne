@@ -57,22 +57,36 @@ local Library = {
 Library.__index = Library
 function Library:Create(class, props)
 	local obj = Instance.new(class)
+	
+	-- Handle custom font setup for text objects
+	local isTextObject = class == "TextLabel" or class == "TextButton" or class == "TextBox"
+	local hasFontProp = props.Font ~= nil
+	
 	for k, val in pairs(props) do
-		obj[k] = val
+		if k == "Font" and isTextObject then
+			-- Skip the Font property, we'll handle it separately
+		else
+			obj[k] = val
+		end
 	end
+	
 	if class == "TextButton" then
 		obj.AutoButtonColor = false
 	end
-	-- Enable RichText for all text elements
-	if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+	
+	-- Enable RichText and apply custom font for all text elements
+	if isTextObject then
 		obj.RichText = true
-		-- Apply custom font if available
 		if USE_CUSTOM_FONT and CUSTOM_FONT_ASSET then
 			pcall(function()
 				obj.FontFace = Font.new(CUSTOM_FONT_ASSET)
 			end)
+		elseif hasFontProp then
+			-- Fallback to the original font if custom font not available
+			obj.Font = props.Font
 		end
 	end
+	
 	return obj
 end
 function Library:Tween(obj, props, time)
