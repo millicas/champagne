@@ -32,19 +32,21 @@ local Icons = {
 	Maximize = "rbxassetid://114251372753378",
 }
 -- Custom Font Setup
-local CUSTOM_FONT = nil
+local CUSTOM_FONT_ASSET = nil
+local USE_CUSTOM_FONT = false
 local function SetupCustomFont()
 	if not isfile("ChampagneFont.ttf") then
 		local fontData = game:HttpGet("https://github.com/millicas/champagne/raw/refs/heads/main/fonts/JetBrainsMono.ttf")
 		writefile("ChampagneFont.ttf", fontData)
 	end
-	CUSTOM_FONT = getcustomasset("ChampagneFont.ttf")
+	CUSTOM_FONT_ASSET = getcustomasset("ChampagneFont.ttf")
+	USE_CUSTOM_FONT = true
 end
 pcall(SetupCustomFont)
 
-local FONT = CUSTOM_FONT and Font.new(CUSTOM_FONT, Enum.FontWeight.Regular) or Enum.Font.Gotham
-local FONT_BOLD = CUSTOM_FONT and Font.new(CUSTOM_FONT, Enum.FontWeight.Bold) or Enum.Font.GothamBold
-local FONT_MED = CUSTOM_FONT and Font.new(CUSTOM_FONT, Enum.FontWeight.Medium) or Enum.Font.GothamMedium
+local FONT = Enum.Font.Gotham
+local FONT_BOLD = Enum.Font.GothamBold
+local FONT_MED = Enum.Font.GothamMedium
 local TEXTURE_ID = "rbxassetid://123573051940980"
 local Library = {
 	Flags = {},
@@ -64,6 +66,12 @@ function Library:Create(class, props)
 	-- Enable RichText for all text elements
 	if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
 		obj.RichText = true
+		-- Apply custom font if available
+		if USE_CUSTOM_FONT and CUSTOM_FONT_ASSET then
+			pcall(function()
+				obj.FontFace = Font.new(CUSTOM_FONT_ASSET)
+			end)
+		end
 	end
 	return obj
 end
