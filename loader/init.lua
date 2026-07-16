@@ -36,7 +36,7 @@ local CUSTOM_FONT_ASSET = nil
 local USE_CUSTOM_FONT = false
 local function SetupCustomFont()
 	if not isfile("ChampagneFont.ttf") then
-		local fontData = game:HttpGet("https://github.com/millicas/champagne/raw/refs/heads/main/fonts/JetBrainsMono.ttf")
+		local fontData = game:HttpGet("https://github.com/millicas/champagne/raw/refs/heads/main/fonts/JetBrainsMono-Medium.ttf")
 		writefile("ChampagneFont.ttf", fontData)
 	end
 	CUSTOM_FONT_ASSET = getcustomasset("ChampagneFont.ttf")
