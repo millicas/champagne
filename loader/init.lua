@@ -66,9 +66,9 @@ local function SetupCustomFont()
 	local mediumAsset = getcustomasset("ChampagneFontMedium.ttf")
 	local boldAsset = getcustomasset("ChampagneFontBold.ttf")
 	
-	CUSTOM_FONT_REGULAR = Font.new(regularAsset)
-	CUSTOM_FONT_MEDIUM = Font.new(mediumAsset)
-	CUSTOM_FONT_BOLD = Font.new(boldAsset)
+	CUSTOM_FONT_REGULAR = Font.new(regularAsset, Enum.FontWeight.Regular, Enum.FontStyle.Normal)
+	CUSTOM_FONT_MEDIUM = Font.new(mediumAsset, Enum.FontWeight.Medium, Enum.FontStyle.Normal)
+	CUSTOM_FONT_BOLD = Font.new(boldAsset, Enum.FontWeight.Bold, Enum.FontStyle.Normal)
 	USE_CUSTOM_FONT = true
 end
 pcall(SetupCustomFont)
