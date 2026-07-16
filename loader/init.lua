@@ -31,7 +31,6 @@ local Icons = {
 	Minimize = "rbxassetid://7734000824",
 	Maximize = "rbxassetid://114251372753378",
 }
--- Custom Font Setup
 local CUSTOM_FONT_ASSET = nil
 local USE_CUSTOM_FONT = false
 local function SetupCustomFont()
@@ -43,7 +42,6 @@ local function SetupCustomFont()
 	USE_CUSTOM_FONT = true
 end
 pcall(SetupCustomFont)
-
 local FONT = Enum.Font.Gotham
 local FONT_BOLD = Enum.Font.GothamBold
 local FONT_MED = Enum.Font.GothamMedium
@@ -57,14 +55,11 @@ local Library = {
 Library.__index = Library
 function Library:Create(class, props)
 	local obj = Instance.new(class)
-	
-	-- Handle custom font setup for text objects
 	local isTextObject = class == "TextLabel" or class == "TextButton" or class == "TextBox"
 	local hasFontProp = props.Font ~= nil
 	
 	for k, val in pairs(props) do
 		if k == "Font" and isTextObject then
-			-- Skip the Font property, we'll handle it separately
 		else
 			obj[k] = val
 		end
@@ -73,8 +68,6 @@ function Library:Create(class, props)
 	if class == "TextButton" then
 		obj.AutoButtonColor = false
 	end
-	
-	-- Enable RichText and apply custom font for all text elements
 	if isTextObject then
 		obj.RichText = true
 		if USE_CUSTOM_FONT and CUSTOM_FONT_ASSET then
@@ -82,11 +75,9 @@ function Library:Create(class, props)
 				obj.FontFace = Font.new(CUSTOM_FONT_ASSET)
 			end)
 		elseif hasFontProp then
-			-- Fallback to the original font if custom font not available
 			obj.Font = props.Font
 		end
 	end
-	
 	return obj
 end
 function Library:Tween(obj, props, time)
