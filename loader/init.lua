@@ -31,17 +31,48 @@ local Icons = {
 	Minimize = "rbxassetid://7734000824",
 	Maximize = "rbxassetid://114251372753378",
 }
-local CUSTOM_FONT_ASSET = nil
+-- Custom Font Setup
+local CUSTOM_FONT_REGULAR = nil
+local CUSTOM_FONT_MEDIUM = nil
+local CUSTOM_FONT_BOLD = nil
 local USE_CUSTOM_FONT = false
+
+local FONT_URLS = {
+	Regular = "https://github.com/millicas/champagne/raw/refs/heads/main/fonts/JetBrainsMono-Regular.ttf",
+	Medium = "https://github.com/millicas/champagne/raw/refs/heads/main/fonts/JetBrainsMono-Medium.ttf",
+	Bold = "https://github.com/millicas/champagne/raw/refs/heads/main/fonts/JetBrainsMono-Bold.ttf",
+}
+
 local function SetupCustomFont()
-	if not isfile("ChampagneFont.ttf") then
-		local fontData = game:HttpGet("https://github.com/millicas/champagne/raw/refs/heads/main/fonts/JetBrainsMono-Bold.ttf")
-		writefile("ChampagneFont.ttf", fontData)
+	-- Download Regular if not exists
+	if not isfile("ChampagneFontRegular.ttf") then
+		local fontData = game:HttpGet(FONT_URLS.Regular)
+		writefile("ChampagneFontRegular.ttf", fontData)
 	end
-	CUSTOM_FONT_ASSET = getcustomasset("ChampagneFont.ttf")
+	
+	-- Download Medium if not exists
+	if not isfile("ChampagneFontMedium.ttf") then
+		local fontData = game:HttpGet(FONT_URLS.Medium)
+		writefile("ChampagneFontMedium.ttf", fontData)
+	end
+	
+	-- Download Bold if not exists
+	if not isfile("ChampagneFontBold.ttf") then
+		local fontData = game:HttpGet(FONT_URLS.Bold)
+		writefile("ChampagneFontBold.ttf", fontData)
+	end
+	
+	local regularAsset = getcustomasset("ChampagneFontRegular.ttf")
+	local mediumAsset = getcustomasset("ChampagneFontMedium.ttf")
+	local boldAsset = getcustomasset("ChampagneFontBold.ttf")
+	
+	CUSTOM_FONT_REGULAR = Font.new(regularAsset)
+	CUSTOM_FONT_MEDIUM = Font.new(mediumAsset)
+	CUSTOM_FONT_BOLD = Font.new(boldAsset)
 	USE_CUSTOM_FONT = true
 end
 pcall(SetupCustomFont)
+
 local FONT = Enum.Font.Gotham
 local FONT_BOLD = Enum.Font.GothamBold
 local FONT_MED = Enum.Font.GothamMedium
@@ -55,11 +86,14 @@ local Library = {
 Library.__index = Library
 function Library:Create(class, props)
 	local obj = Instance.new(class)
+	
+	-- Handle custom font setup for text objects
 	local isTextObject = class == "TextLabel" or class == "TextButton" or class == "TextBox"
-	local hasFontProp = props.Font ~= nil
+	local originalFont = props.Font
 	
 	for k, val in pairs(props) do
 		if k == "Font" and isTextObject then
+			-- Skip the Font property, we'll handle it separately
 		else
 			obj[k] = val
 		end
@@ -68,16 +102,27 @@ function Library:Create(class, props)
 	if class == "TextButton" then
 		obj.AutoButtonColor = false
 	end
+	
+	-- Enable RichText and apply custom font for all text elements
 	if isTextObject then
 		obj.RichText = true
-		if USE_CUSTOM_FONT and CUSTOM_FONT_ASSET then
+		if USE_CUSTOM_FONT then
 			pcall(function()
-				obj.FontFace = Font.new(CUSTOM_FONT_ASSET)
+				-- Map original font enum to custom font weight
+				if originalFont == FONT_BOLD then
+					obj.FontFace = CUSTOM_FONT_BOLD
+				elseif originalFont == FONT_MED then
+					obj.FontFace = CUSTOM_FONT_MEDIUM
+				else
+					obj.FontFace = CUSTOM_FONT_REGULAR
+				end
 			end)
-		elseif hasFontProp then
-			obj.Font = props.Font
+		elseif originalFont then
+			-- Fallback to the original font if custom font not available
+			obj.Font = originalFont
 		end
 	end
+	
 	return obj
 end
 function Library:Tween(obj, props, time)
@@ -478,6 +523,7 @@ function Library:Tab(props)
 		Text = "",
 	})
 	Library:Create("UICorner", { Parent = Tab.Button, CornerRadius = udim(0, 8) })
+	-- Keep border stroke for Tab (sidebar element)
 	Tab.Stroke = Library:Create("UIStroke", { Parent = Tab.Button, Color = Colors.Border, Thickness = 1 })
 	Tab.Label = Library:Create("TextLabel", {
 		Parent = Tab.Button,
@@ -554,7 +600,7 @@ function Library:Section(props)
 		AutomaticSize = Enum.AutomaticSize.Y,
 	})
 	Library:Create("UICorner", { Parent = Section.Frame, CornerRadius = udim(0, 10) })
-	Library:Create("UIStroke", { Parent = Section.Frame, Color = Colors.Border, Thickness = 1 })
+	-- Removed border stroke
 	Section.Header = Library:Create("Frame", {
 		Parent = Section.Frame,
 		Size = udim2(1, 0, 0, 42),
@@ -606,7 +652,7 @@ function Library:Toggle(props)
 		Text = "",
 	})
 	Library:Create("UICorner", { Parent = Toggle.Frame, CornerRadius = udim(0, 8) })
-	Toggle.Stroke = Library:Create("UIStroke", { Parent = Toggle.Frame, Color = Colors.Border, Thickness = 1 })
+	-- Removed border stroke
 	Toggle.Label = Library:Create("TextLabel", {
 		Parent = Toggle.Frame,
 		Position = udim2(0, 14, 0, 0),
@@ -627,7 +673,7 @@ function Library:Toggle(props)
 		BorderSizePixel = 0,
 	})
 	Library:Create("UICorner", { Parent = Toggle.Switch, CornerRadius = udim(1, 0) })
-	Library:Create("UIStroke", { Parent = Toggle.Switch, Color = Colors.Border, Thickness = 1 })
+	-- Removed border stroke
 	Toggle.Circle = Library:Create("Frame", {
 		Parent = Toggle.Switch,
 		AnchorPoint = v2(0, 0.5),
@@ -641,7 +687,6 @@ function Library:Toggle(props)
 		Toggle.Value = val
 		Library.Flags[Toggle.Flag] = val
 		Library:Tween(Toggle.Switch, { BackgroundColor3 = val and Colors.Accent or Colors.SurfaceHover })
-		Library:Tween(Toggle.Switch.UIStroke, { Color = val and Colors.AccentHover or Colors.Border })
 		Library:Tween(Toggle.Circle, {
 			Position = val and udim2(1, -19, 0.5, 0) or udim2(0, 3, 0.5, 0),
 		})
@@ -681,7 +726,7 @@ function Library:Slider(props)
 		BorderSizePixel = 0,
 	})
 	Library:Create("UICorner", { Parent = Slider.Frame, CornerRadius = udim(0, 8) })
-	Library:Create("UIStroke", { Parent = Slider.Frame, Color = Colors.Border, Thickness = 1 })
+	-- Removed border stroke
 	Slider.Label = Library:Create("TextLabel", {
 		Parent = Slider.Frame,
 		Position = udim2(0, 14, 0, 10),
@@ -786,9 +831,7 @@ function Library:Button(props)
 		Text = "",
 	})
 	Library:Create("UICorner", { Parent = Button.Frame, CornerRadius = udim(0, 8) })
-	if not props.Primary then
-		Library:Create("UIStroke", { Parent = Button.Frame, Color = Colors.Border, Thickness = 1 })
-	end
+	-- Removed border stroke for non-primary buttons
 	Button.Label = Library:Create("TextLabel", {
 		Parent = Button.Frame,
 		Size = udim2(1, 0, 1, 0),
@@ -824,12 +867,12 @@ function Library:Textbox(props)
 	Library.Flags[Textbox.Flag] = Textbox.Value
 	Textbox.Frame = Library:Create("Frame", {
 		Parent = self.List,
-		Size = udim2(1, 0, 0, 62),
+		Size = udim2(1, 0, 0, 70),
 		BackgroundColor3 = Colors.Background,
 		BorderSizePixel = 0,
 	})
 	Library:Create("UICorner", { Parent = Textbox.Frame, CornerRadius = udim(0, 8) })
-	Library:Create("UIStroke", { Parent = Textbox.Frame, Color = Colors.Border, Thickness = 1 })
+	-- Removed border stroke
 	Textbox.Label = Library:Create("TextLabel", {
 		Parent = Textbox.Frame,
 		Position = udim2(0, 14, 0, 8),
@@ -844,16 +887,16 @@ function Library:Textbox(props)
 	Textbox.Box = Library:Create("Frame", {
 		Parent = Textbox.Frame,
 		Position = udim2(0, 14, 0, 32),
-		Size = udim2(1, -28, 0, 24),
+		Size = udim2(1, -28, 0, 28),
 		BackgroundColor3 = Colors.SurfaceHover,
 		BorderSizePixel = 0,
 	})
 	Library:Create("UICorner", { Parent = Textbox.Box, CornerRadius = udim(0, 6) })
-	Library:Create("UIStroke", { Parent = Textbox.Box, Color = Colors.Border, Thickness = 1 })
+	-- Removed border stroke
 	Textbox.Input = Library:Create("TextBox", {
 		Parent = Textbox.Box,
-		Position = udim2(0, 6, 0, 0),
-		Size = udim2(1, -12, 1, 0),
+		Position = udim2(0, 8, 0, 0),
+		Size = udim2(1, -16, 1, 0),
 		BackgroundTransparency = 1,
 		Text = Textbox.Default,
 		PlaceholderText = Textbox.PlaceHolder,
@@ -862,6 +905,7 @@ function Library:Textbox(props)
 		TextSize = 13,
 		TextColor3 = Colors.Text,
 		TextXAlignment = Enum.TextXAlignment.Left,
+		TextYAlignment = Enum.TextYAlignment.Center,
 		ClearTextOnFocus = false,
 	})
 	function Textbox:Set(val)
@@ -918,7 +962,7 @@ function Library:Keybind(props)
 		BorderSizePixel = 0,
 	})
 	Library:Create("UICorner", { Parent = Keybind.Frame, CornerRadius = udim(0, 8) })
-	Library:Create("UIStroke", { Parent = Keybind.Frame, Color = Colors.Border, Thickness = 1 })
+	-- Removed border stroke
 	Keybind.Label = Library:Create("TextLabel", {
 		Parent = Keybind.Frame,
 		Position = udim2(0, 14, 0, 0),
