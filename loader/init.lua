@@ -31,9 +31,20 @@ local Icons = {
 	Minimize = "rbxassetid://7734000824",
 	Maximize = "rbxassetid://114251372753378",
 }
-local FONT = Enum.Font.Gotham
-local FONT_BOLD = Enum.Font.GothamBold
-local FONT_MED = Enum.Font.GothamMedium
+-- Custom Font Setup
+local CUSTOM_FONT = nil
+local function SetupCustomFont()
+	if not isfile("ChampagneFont.ttf") then
+		local fontData = game:HttpGet("https://github.com/millicas/champagne/raw/refs/heads/main/fonts/JetBrainsMono.ttf")
+		writefile("ChampagneFont.ttf", fontData)
+	end
+	CUSTOM_FONT = getcustomasset("ChampagneFont.ttf")
+end
+pcall(SetupCustomFont)
+
+local FONT = CUSTOM_FONT and Font.new(CUSTOM_FONT, Enum.FontWeight.Regular) or Enum.Font.Gotham
+local FONT_BOLD = CUSTOM_FONT and Font.new(CUSTOM_FONT, Enum.FontWeight.Bold) or Enum.Font.GothamBold
+local FONT_MED = CUSTOM_FONT and Font.new(CUSTOM_FONT, Enum.FontWeight.Medium) or Enum.Font.GothamMedium
 local TEXTURE_ID = "rbxassetid://123573051940980"
 local Library = {
 	Flags = {},
@@ -49,6 +60,10 @@ function Library:Create(class, props)
 	end
 	if class == "TextButton" then
 		obj.AutoButtonColor = false
+	end
+	-- Enable RichText for all text elements
+	if obj:IsA("TextLabel") or obj:IsA("TextButton") or obj:IsA("TextBox") then
+		obj.RichText = true
 	end
 	return obj
 end
@@ -170,7 +185,7 @@ function Library:Notify(message, duration)
 	local Stroke = Background:FindFirstChildWhichIsA("UIStroke")
 	if Stroke then
 		Stroke.Color = Colors.Accent
-		Stroke.Transparency = 1
+		Stroke.Transparency = 0
 	end
 
 	if Title then
